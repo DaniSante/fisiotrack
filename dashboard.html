@@ -426,6 +426,63 @@
       color: var(--text-dim); border-radius: var(--r); border: 1px solid var(--border);
     }
 
+    /* ── LOAD INTERPRETATION ── */
+    .load-interp {
+      background: var(--surface);
+      border: 1px solid var(--border2);
+      border-radius: var(--r-lg);
+      padding: 20px 24px;
+      margin-bottom: 16px;
+    }
+    .load-interp-main {
+      display: flex; align-items: center; gap: 16px;
+      margin-bottom: 20px; padding-bottom: 20px;
+      border-bottom: 1px solid var(--border);
+    }
+    .load-interp-icon {
+      font-size: 1.8rem; flex-shrink: 0; width: 48px; text-align: center;
+    }
+    .load-interp-title {
+      font-size: 1rem; font-weight: 300; color: var(--text); line-height: 1.4; margin-bottom: 4px;
+    }
+    .load-interp-sub {
+      font-size: .72rem; color: var(--text-dim); line-height: 1.5;
+    }
+    .load-indicators {
+      display: grid; grid-template-columns: repeat(3, 1fr); gap: 0; margin-bottom: 16px;
+    }
+    .load-ind { padding: 0 20px 0 0; }
+    .load-ind-sep {
+      padding: 0 20px;
+      border-left: 1px solid var(--border); border-right: 1px solid var(--border);
+    }
+    .load-ind-label {
+      font-size: .56rem; letter-spacing: .16em; text-transform: uppercase;
+      color: var(--text-dim); margin-bottom: 6px;
+    }
+    .load-ind-value {
+      font-size: 1.1rem; font-weight: 200; font-variant-numeric: tabular-nums;
+      color: var(--text); margin-bottom: 6px;
+    }
+    .load-ind-badge {
+      display: inline-block; font-size: .56rem; letter-spacing: .1em;
+      text-transform: uppercase; padding: 2px 8px; border-radius: var(--r);
+    }
+    .load-ind-badge.good { background: var(--teal-dim);  color: var(--teal-hi); border: 1px solid rgba(75,168,130,.3); }
+    .load-ind-badge.warn { background: var(--amber-dim); color: var(--amber);   border: 1px solid rgba(201,169,110,.3); }
+    .load-ind-badge.bad  { background: var(--red-dim);   color: var(--red);     border: 1px solid rgba(192,112,112,.3); }
+    .load-ind-badge.blue { background: rgba(96,165,250,.15); color: var(--blue); border: 1px solid rgba(96,165,250,.3); }
+    .load-ind-badge.dim  { background: var(--surface2);  color: var(--text-dim); border: 1px solid var(--border2); }
+    .load-interp-disclaimer {
+      font-size: .6rem; color: var(--text-dim); line-height: 1.6;
+      padding-top: 14px; border-top: 1px solid var(--border); font-style: italic;
+    }
+    @media (max-width: 700px) {
+      .load-indicators { grid-template-columns: 1fr; gap: 14px; }
+      .load-ind-sep { padding: 14px 0; border-left: none; border-right: none; border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); }
+      .load-ind { padding: 0; }
+    }
+
     /* ── MAIN TABS ── */
     .main-tabs-bar {
       position: sticky; top: 57px; z-index: 90;
@@ -580,6 +637,46 @@
       </div>
     </div>
     <div class="charts-section">
+
+      <div class="load-interp" id="load-interp">
+
+        <div class="load-interp-main" id="load-interp-main">
+          <div class="load-interp-icon" id="load-interp-icon">—</div>
+          <div class="load-interp-text">
+            <div class="load-interp-title" id="load-interp-title">Calculando...</div>
+            <div class="load-interp-sub" id="load-interp-sub"></div>
+          </div>
+        </div>
+
+        <div class="load-indicators">
+
+          <div class="load-ind">
+            <div class="load-ind-label">Carga esta semana</div>
+            <div class="load-ind-value" id="ind-carga-val">—</div>
+            <div class="load-ind-badge" id="ind-carga-badge"></div>
+          </div>
+
+          <div class="load-ind load-ind-sep">
+            <div class="load-ind-label">Cambio vs semana anterior</div>
+            <div class="load-ind-value" id="ind-cambio-val">—</div>
+            <div class="load-ind-badge" id="ind-cambio-badge"></div>
+          </div>
+
+          <div class="load-ind">
+            <div class="load-ind-label">Riesgo de lesión (ACWR)</div>
+            <div class="load-ind-value" id="ind-acwr-val">—</div>
+            <div class="load-ind-badge" id="ind-acwr-badge"></div>
+          </div>
+
+        </div>
+
+        <div class="load-interp-disclaimer">
+          Basado en ACWR EWMA (Hulin et al., 2016) y cambio semanal de carga (Owen et al., 2016).
+          El ACWR es una señal de alerta, no un diagnóstico. Úsalo como apoyo a tu criterio profesional.
+        </div>
+
+      </div>
+
       <div class="sec-hdr" style="padding-top:8px">
         <div class="sec-title">Carga &amp; ACWR</div>
       </div>
@@ -798,6 +895,7 @@ function setPeriod(period, btn) {
   });
   render();
   loadStoredAnalysis();
+  renderLoadInterpretation();
 }
 
 function switchMainTab(tab, btn) {
@@ -807,6 +905,7 @@ function switchMainTab(tab, btn) {
   const panel = document.getElementById('panel-' + tab);
   if (panel) panel.classList.add('active');
   if (tab === 'hoy') renderHoy();
+  if (tab === 'carga') renderLoadInterpretation();
   if (tab === 'carga' || tab === 'analisis') {
     setTimeout(() => {
       resizeActiveCharts();
@@ -859,6 +958,7 @@ function render() {
   renderACWR(bienestarFull.filter(r=>r.contexto!=='rehab'), rawData.entrenos);
   renderActiveChart(bienestar, bienestarFull, entrenos);
   renderHoy();
+  renderLoadInterpretation();
 }
 
 // ── HERO KPIs ─────────────────────────────────────────────
@@ -1668,6 +1768,126 @@ function renderWellness(bienestar) {
 }
 
 // ── ACWR EWMA CHART ───────────────────────────────────────
+// ── LOAD INTERPRETATION ───────────────────────────────────
+function renderLoadInterpretation() {
+  if (!rawData) return;
+
+  const allBnoRehab = rawData.bienestar.filter(r => r.contexto !== 'rehab');
+
+  const acwrResult = computeTeamACWR(allBnoRehab, rawData.entrenos);
+  const acwr = acwrResult ? acwrResult.acwr : null;
+
+  const wkChange = computeWeeklyLoadChange(allBnoRehab, rawData.entrenos);
+
+  const sevenDaysAgo = new Date(); sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+  const last7B = allBnoRehab.filter(r => toDate(r.fecha) >= sevenDaysAgo);
+  const hooMedio = last7B.length ? +avgArr(last7B.map(r => r.total)).toFixed(1) : null;
+
+  // Indicador 1: Carga esta semana
+  const indCargaVal   = document.getElementById('ind-carga-val');
+  const indCargaBadge = document.getElementById('ind-carga-badge');
+  if (wkChange !== null) {
+    indCargaVal.textContent = Math.round(wkChange.thisWeek) + ' UA';
+    if (wkChange.thisWeek > 3500) {
+      indCargaBadge.textContent = 'Alta'; indCargaBadge.className = 'load-ind-badge bad';
+    } else if (wkChange.thisWeek > 2000) {
+      indCargaBadge.textContent = 'Media'; indCargaBadge.className = 'load-ind-badge warn';
+    } else if (wkChange.thisWeek > 0) {
+      indCargaBadge.textContent = 'Baja'; indCargaBadge.className = 'load-ind-badge good';
+    } else {
+      indCargaBadge.textContent = 'Sin datos'; indCargaBadge.className = 'load-ind-badge dim';
+    }
+  } else {
+    indCargaVal.textContent = '—';
+    indCargaBadge.textContent = 'Sin datos'; indCargaBadge.className = 'load-ind-badge dim';
+  }
+
+  // Indicador 2: Cambio semanal
+  const indCambioVal   = document.getElementById('ind-cambio-val');
+  const indCambioBadge = document.getElementById('ind-cambio-badge');
+  if (wkChange !== null && wkChange.prevWeek > 0) {
+    const sign = wkChange.change > 0 ? '+' : '';
+    indCambioVal.textContent = sign + wkChange.change + '%';
+    if (wkChange.twoConsecDown) {
+      indCambioBadge.textContent = 'Desentrenamiento'; indCambioBadge.className = 'load-ind-badge blue';
+    } else if (wkChange.change > 15) {
+      indCambioBadge.textContent = 'Incremento brusco'; indCambioBadge.className = 'load-ind-badge bad';
+    } else if (wkChange.change > 10) {
+      indCambioBadge.textContent = 'Incremento moderado'; indCambioBadge.className = 'load-ind-badge warn';
+    } else if (wkChange.change < -20) {
+      indCambioBadge.textContent = 'Descenso notable'; indCambioBadge.className = 'load-ind-badge blue';
+    } else {
+      indCambioBadge.textContent = 'Cambio seguro'; indCambioBadge.className = 'load-ind-badge good';
+    }
+  } else {
+    indCambioVal.textContent = '—';
+    indCambioBadge.textContent = 'Sin semana anterior'; indCambioBadge.className = 'load-ind-badge dim';
+  }
+
+  // Indicador 3: ACWR
+  const indAcwrVal   = document.getElementById('ind-acwr-val');
+  const indAcwrBadge = document.getElementById('ind-acwr-badge');
+  if (acwr !== null) {
+    indAcwrVal.textContent = acwr.toFixed(2);
+    if (acwr > 1.5) {
+      indAcwrBadge.textContent = 'Riesgo elevado'; indAcwrBadge.className = 'load-ind-badge bad';
+    } else if (acwr > 1.3) {
+      indAcwrBadge.textContent = 'Precaución'; indAcwrBadge.className = 'load-ind-badge warn';
+    } else if (acwr >= 0.8) {
+      indAcwrBadge.textContent = 'Zona óptima'; indAcwrBadge.className = 'load-ind-badge good';
+    } else {
+      indAcwrBadge.textContent = 'Posible desentrenamiento'; indAcwrBadge.className = 'load-ind-badge blue';
+    }
+  } else {
+    indAcwrVal.textContent = '—';
+    indAcwrBadge.textContent = 'Datos insuficientes (<28 días)'; indAcwrBadge.className = 'load-ind-badge dim';
+  }
+
+  // Conclusión principal
+  const titleEl = document.getElementById('load-interp-title');
+  const subEl   = document.getElementById('load-interp-sub');
+  const iconEl  = document.getElementById('load-interp-icon');
+  let title = '', sub = '', icon = '';
+
+  if (acwr !== null && acwr > 1.5) {
+    icon = '🔴';
+    title = 'Carga muy elevada. Reduce el volumen antes del próximo partido.';
+    sub = `El equipo acumula más carga de la que está adaptado (ACWR ${acwr.toFixed(2)}). Riesgo elevado de lesión no-contacto. Prioriza recuperación y sesiones de baja intensidad.`;
+  } else if (wkChange !== null && wkChange.change > 15) {
+    icon = '🟠';
+    title = `La carga subió un ${wkChange.change}% esta semana. Vigila el estado de los jugadores.`;
+    sub = 'Un incremento superior al 15% en una semana aumenta el riesgo de lesión (Owen et al., 2016). Considera reducir la intensidad en la próxima sesión o añadir un día de recuperación activa.';
+  } else if (acwr !== null && acwr > 1.3) {
+    icon = '🟡';
+    title = 'El equipo está cargado. Mantén la intensidad pero controla el volumen.';
+    sub = `ACWR de ${acwr.toFixed(2)}, en zona de precaución. El equipo trabaja por encima de su media habitual. No es riesgo inmediato, pero evita incrementos adicionales esta semana.`;
+  } else if (wkChange !== null && wkChange.twoConsecDown) {
+    icon = '🔵';
+    title = 'Dos semanas seguidas bajando carga. El equipo puede estar perdiendo forma.';
+    sub = 'Una caída sostenida de más del 20% durante dos semanas consecutivas puede indicar desentrenamiento (Foster, 1998). Considera incrementar progresivamente la carga si no hay razón médica o táctica.';
+  } else if (wkChange !== null && wkChange.change < -20) {
+    icon = '🔵';
+    title = 'Semana de carga baja. Adecuado para recuperación o semana pre-partido.';
+    sub = 'La carga bajó más del 20% respecto a la semana anterior. Es adecuado si hay un partido importante próximo o si era una semana de descarga planificada.';
+  } else if (hooMedio !== null && hooMedio <= 13 && acwr !== null && acwr <= 1.3) {
+    icon = '🟡';
+    title = 'Carga controlada, pero el bienestar del equipo es bajo.';
+    sub = `Hooper medio de ${hooMedio}/28. La carga está en zona segura, pero el estado general del equipo no es óptimo. Revisa factores externos: estrés, sueño o carga de vida de los jugadores.`;
+  } else if (acwr !== null && acwr >= 0.8 && acwr <= 1.3) {
+    icon = '🟢';
+    title = 'El equipo llega bien de carga. Puedes mantener la planificación prevista.';
+    sub = `ACWR de ${acwr.toFixed(2)}, en zona óptima${wkChange !== null ? ` · cambio semanal de ${wkChange.change > 0 ? '+' : ''}${wkChange.change}%` : ''}. Nivel de carga adecuado para rendimiento y protección frente a lesiones.`;
+  } else {
+    icon = '⚪';
+    title = 'Datos insuficientes para calcular el ACWR.';
+    sub = 'Se necesitan al menos 28 días de registros para activar el análisis de carga. Sigue monitorizando y el análisis se activará automáticamente.';
+  }
+
+  if (iconEl)  iconEl.textContent  = icon;
+  if (titleEl) titleEl.textContent = title;
+  if (subEl)   subEl.textContent   = sub;
+}
+
 function renderACWR(allB, allE) {
   const ctx = getCtx('chart-acwr');
   if (!ctx) return;
