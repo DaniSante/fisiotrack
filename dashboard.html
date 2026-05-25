@@ -814,6 +814,7 @@ function switchMainTab(tab, btn) {
       const bienestarFull = rawData.bienestar.filter(r => toDate(r.fecha) >= cutoff);
       const bienestar     = bienestarFull.filter(r => r.contexto !== 'rehab');
       const entrenos      = rawData.entrenos.filter(r => toDate(r.fecha) >= cutoff);
+      if (tab === 'carga') activeChartTab = 'carga';
       renderActiveChart(bienestar, bienestarFull, entrenos);
     }, 50);
   }
@@ -1626,6 +1627,7 @@ function showChartTab(tab, btn) {
 
 function renderActiveChart(bienestar, bienestarFull, entrenos) {
   if (activeChartTab === 'bienestar') renderWellness(bienestar);
+  if (activeChartTab === 'carga')     renderACWR(bienestarFull.filter(r=>r.contexto!=='rehab'), rawData.entrenos);
   if (activeChartTab === 'radar')     renderRadar(bienestar);
   if (activeChartTab === 'heatmap')   renderHeatmap(rawData.bienestar);
 }
@@ -1670,45 +1672,82 @@ function renderACWR(allB, allE) {
   const ctx = getCtx('chart-acwr');
   if (!ctx) return;
   if (cAcwr) { cAcwr.destroy(); cAcwr = null; }
-  const eByDate = {}; allE.forEach(r=>{const d=dk(r.fecha);if(d)eByDate[d]=r;});
-  const bByDate = {}; allB.forEach(r=>{const d=dk(r.fecha);if(!d)return;if(!bByDate[d])bByDate[d]=[];bByDate[d].push(r);});
-  const days = 56;
-  const dailyLoads = [];
-  for (let i = days-1; i >= 0; i--) {
-    const dt=new Date(); dt.setDate(dt.getDate()-i); const d=dk(dt);
+
+  const eByDate = {}, bByDate = {};
+  allE.forEach(r => { const d=dk(r.fecha); if(d) eByDate[d]=r; });
+  allB.forEach(r => { const d=dk(r.fecha); if(!d) return; if(!bByDate[d]) bByDate[d]=[]; bByDate[d].push(r); });
+
+  const allKeys = [...new Set([...Object.keys(bByDate),...Object.keys(eByDate)])].sort();
+  if (!allKeys.length) return;
+
+  const startDt = new Date(allKeys[0]);
+  const endDt   = new Date(); endDt.setHours(12,0,0,0);
+  const labels=[], loadsArr=[], acwrArr=[];
+  const loadsFull=[];
+
+  for (let dt=new Date(startDt); dt<=endDt; dt.setDate(dt.getDate()+1)) {
+    const d = dk(dt);
     const rpe = bByDate[d] ? avgArr(bByDate[d].map(r=>r.rpe)) : 0;
     let load = 0;
     if (rpe > 0) {
       if (eByDate[d] && eByDate[d].duracion > 0) load = rpe * eByDate[d].duracion;
-      else if (bByDate[d] && bByDate[d].some(r => r.tipo === 'P')) load = rpe * 90;
+      else if (bByDate[d] && bByDate[d].some(r=>r.tipo==='P')) load = rpe * 90;
     }
-    dailyLoads.push({d, load});
+    loadsFull.push(load);
+    labels.push(fmtDate(d));
+    loadsArr.push(load > 0 ? load : null);
   }
-  const labels=[], acwrVals=[], acuteVals=[];
+
+  if (loadsFull.length < 28) {
+    const canvas = document.getElementById('chart-acwr');
+    if (canvas) canvas.style.display = 'none';
+    const parent = document.getElementById('panel-carga-chart');
+    if (parent) {
+      let e = parent.querySelector('.empty-state');
+      if (!e) { e = document.createElement('div'); e.className='empty-state'; parent.appendChild(e); }
+      e.innerHTML = '<div class="empty-icon">📉</div>Se necesitan ≥28 días de datos para el ACWR EWMA';
+    }
+    return;
+  }
+
   const LAM_A=0.25, LAM_C=0.069;
-  const initMean = dailyLoads.slice(0,7).reduce((s,x)=>s+x.load,0)/7;
+  const initMean = loadsFull.slice(0,7).reduce((a,b)=>a+b,0)/7;
   let ewmaA=initMean, ewmaC=initMean;
-  for (let i=0; i<dailyLoads.length; i++) {
-    ewmaA = LAM_A*dailyLoads[i].load + (1-LAM_A)*ewmaA;
-    ewmaC = LAM_C*dailyLoads[i].load + (1-LAM_C)*ewmaC;
-    if (i >= 27) {
-      labels.push(fmtDate(dailyLoads[i].d));
-      acuteVals.push(+ewmaA.toFixed(0));
-      acwrVals.push(ewmaC > 0 ? +(ewmaA/ewmaC).toFixed(2) : null);
-    }
+  const acwrFull=[];
+  for (let i=0;i<loadsFull.length;i++) {
+    ewmaA = LAM_A*loadsFull[i]+(1-LAM_A)*ewmaA;
+    ewmaC = LAM_C*loadsFull[i]+(1-LAM_C)*ewmaC;
+    acwrFull.push(ewmaC>0 ? +(ewmaA/ewmaC).toFixed(2) : null);
   }
-  if (acwrVals.every(v=>v===null)){showEmpty(ctx.canvas,'📉','Se necesitan ≥28 días de datos para el ACWR EWMA');return;}
-  cAcwr = new Chart(ctx,{
-    type:'bar', data:{labels, datasets:[
-      {type:'bar',  label:'Carga aguda EWMA (UA)', data:acuteVals, backgroundColor:'rgba(75,168,130,.12)', borderColor:'#4BA882', borderWidth:1, yAxisID:'y1'},
-      {type:'line', label:'ACWR EWMA',             data:acwrVals, borderColor:'#60a5fa', backgroundColor:'transparent', borderWidth:2, pointRadius:3, tension:.3, yAxisID:'y2'}
-    ]},
-    options:{responsive:true,maintainAspectRatio:false,interaction:{mode:'index',intersect:false},
-      plugins:{legend:{labels:{boxWidth:12,color:'#76767E',font:{size:11}}},tooltip:{backgroundColor:'#191920',borderColor:'#2A2A36',borderWidth:1}},
-      scales:{
-        x:{grid:{color:'#1E1E26'},ticks:{maxTicksLimit:12}},
-        y1:{position:'left',grid:{color:'#1E1E26'},title:{display:true,text:'Carga aguda (UA)',color:'#76767E',font:{size:11}}},
-        y2:{position:'right',min:0,max:2.2,grid:{drawOnChartArea:false},title:{display:true,text:'ACWR EWMA',color:'#60a5fa',font:{size:11}}}
+
+  const canvas = document.getElementById('chart-acwr');
+  if (canvas) canvas.style.display = '';
+
+  const cutoff = getCutoff(currentPeriod);
+  const startIdx = loadsFull.length - Math.ceil((endDt - cutoff)/86400000) - 1;
+  const sliceFrom = Math.max(0, startIdx);
+  const sliceLabels = labels.slice(sliceFrom);
+  const sliceLoads  = loadsArr.slice(sliceFrom);
+  const sliceAcwr   = acwrFull.slice(sliceFrom);
+
+  cAcwr = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: sliceLabels,
+      datasets: [
+        { label: 'Carga aguda (UA)', data: sliceLoads, backgroundColor: 'rgba(75,168,130,.35)', borderColor: 'rgba(75,168,130,.7)', borderWidth: 1, borderRadius: 2 },
+        { label: 'ACWR EWMA', data: sliceAcwr, type: 'line', borderColor: '#60a5fa', backgroundColor: 'transparent', borderWidth: 1.5, pointRadius: 0, tension: 0.3, yAxisID: 'y2' }
+      ]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false, interaction: { mode:'index', intersect:false },
+      plugins: { legend: { display: false }, tooltip: { callbacks: {
+        label: ctx => ctx.dataset.label + ': ' + (ctx.parsed.y !== null ? ctx.parsed.y : '—')
+      }}},
+      scales: {
+        x: { ticks: { maxTicksLimit: 12, font:{ size:10 } } },
+        y: { title:{ display:true, text:'UA', font:{size:10} }, ticks:{ font:{size:10} } },
+        y2: { position:'right', min:0, max:2.5, title:{ display:true, text:'ACWR', font:{size:10} }, grid:{ drawOnChartArea:false }, ticks:{ font:{size:10} } }
       }
     }
   });
