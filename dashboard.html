@@ -355,6 +355,77 @@
       .pulse-bar  { grid-template-columns: repeat(2, 1fr); }
     }
 
+    /* ── HOY PANEL ── */
+    .content { max-width: 900px; margin: 0 auto; padding: 0 24px 48px; }
+    .sec-head { display: flex; align-items: center; gap: 12px; padding: 24px 0 10px; }
+    .sec-line  { flex: 1; height: 1px; background: var(--border); }
+
+    .hoy-hero {
+      margin: 16px 0; padding: 24px 20px; text-align: center;
+      border: 1px solid var(--border); border-radius: var(--r);
+      background: linear-gradient(150deg,rgba(255,255,255,.042) 0%,rgba(255,255,255,.016) 55%,rgba(0,0,0,.06) 100%);
+    }
+    .hoy-hero-label {
+      font-size: .6rem; letter-spacing: .18em; text-transform: uppercase;
+      color: var(--text-dim); margin-bottom: 12px;
+    }
+    .hoy-hero-estado {
+      font-size: 1.8rem; font-weight: 200; letter-spacing: .04em; margin-bottom: 8px;
+    }
+    .hoy-hero-estado.bien     { color: var(--green); }
+    .hoy-hero-estado.atencion { color: var(--amber); }
+    .hoy-hero-estado.riesgo   { color: var(--red); }
+    .hoy-hero-sub { font-size: .78rem; color: var(--text-dim); letter-spacing: .04em; }
+
+    .hoy-alert-row {
+      display: flex; align-items: center; gap: 12px;
+      padding: 13px 16px; border-radius: var(--r);
+      border: 1px solid var(--border); margin-bottom: 8px;
+      background: linear-gradient(150deg,rgba(255,255,255,.042) 0%,rgba(255,255,255,.016) 55%,rgba(0,0,0,.06) 100%);
+    }
+    .hoy-alert-row.riesgo   { border-color: var(--red);   background: var(--red-lo); }
+    .hoy-alert-row.atencion { border-color: var(--amber); background: var(--amber-lo); }
+    .hoy-alert-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+    .hoy-alert-dot.riesgo   { background: var(--red); }
+    .hoy-alert-dot.atencion { background: var(--amber); }
+    .hoy-alert-name   { font-size: .88rem; font-weight: 400; flex: 1; color: var(--text); }
+    .hoy-alert-reason { font-size: .72rem; color: var(--text-dim); }
+    .hoy-alert-badge {
+      font-size: .6rem; padding: 3px 8px; border-radius: var(--r);
+      letter-spacing: .1em; text-transform: uppercase; font-weight: 400; flex-shrink: 0;
+    }
+    .hoy-alert-badge.riesgo   { background: var(--red-dim);   color: var(--red); }
+    .hoy-alert-badge.atencion { background: var(--amber-dim); color: var(--amber); }
+
+    .hoy-missing-row {
+      display: flex; align-items: center; gap: 10px;
+      padding: 11px 16px; border-radius: var(--r);
+      border: 1px solid var(--border); margin-bottom: 6px;
+      background: rgba(255,255,255,.02);
+    }
+    .hoy-missing-name { font-size: .85rem; color: var(--text-mid); flex: 1; }
+    .hoy-missing-days { font-size: .72rem; color: var(--text-dim); }
+
+    .hoy-player-row {
+      display: flex; align-items: center; gap: 12px;
+      padding: 12px 16px; border-radius: var(--r);
+      border: 1px solid var(--border); margin-bottom: 6px;
+      background: rgba(255,255,255,.02); transition: border-color .15s;
+    }
+    .hoy-player-row:hover { border-color: var(--border2); }
+    .hoy-player-name   { font-size: .85rem; flex: 1; color: var(--text); }
+    .hoy-player-hooper { font-size: .82rem; font-variant-numeric: tabular-nums; min-width: 48px; text-align: right; }
+    .hoy-player-acwr   { font-size: .72rem; color: var(--text-dim); min-width: 60px; text-align: right; }
+    .hoy-semaforo { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+    .hoy-semaforo.bien      { background: var(--green); }
+    .hoy-semaforo.atencion  { background: var(--amber); }
+    .hoy-semaforo.riesgo    { background: var(--red); }
+    .hoy-semaforo.sin-datos { background: var(--text-dim); }
+    .hoy-empty {
+      padding: 20px; text-align: center; font-size: .78rem;
+      color: var(--text-dim); border-radius: var(--r); border: 1px solid var(--border);
+    }
+
     /* ── MAIN TABS ── */
     .main-tabs-bar {
       position: sticky; top: 57px; z-index: 90;
@@ -426,10 +497,23 @@
 
 <!-- PANEL HOY -->
 <div class="main-panel active" id="panel-hoy">
-  <div class="main">
-    <div style="padding:40px 0;text-align:center;color:var(--text-dim);font-size:.82rem;">
-      Vista "Hoy" próximamente
+  <div class="content">
+
+    <div class="hoy-hero" id="hoy-hero">
+      <div class="hoy-hero-label">Estado del equipo hoy</div>
+      <div class="hoy-hero-estado" id="hoy-estado-text">—</div>
+      <div class="hoy-hero-sub" id="hoy-sub">Cargando...</div>
     </div>
+
+    <div class="sec-head"><div class="sec-title">Requieren atención</div><div class="sec-line"></div></div>
+    <div id="hoy-alertas"></div>
+
+    <div class="sec-head"><div class="sec-title">Sin reportar hoy</div><div class="sec-line"></div></div>
+    <div id="hoy-missing"></div>
+
+    <div class="sec-head"><div class="sec-title">Plantilla completa</div><div class="sec-line"></div></div>
+    <div id="hoy-plantilla"></div>
+
   </div>
 </div>
 
@@ -716,6 +800,7 @@ function switchMainTab(tab, btn) {
   if (btn) btn.classList.add('active');
   const panel = document.getElementById('panel-' + tab);
   if (panel) panel.classList.add('active');
+  if (tab === 'hoy') renderHoy();
 }
 
 function getCutoff(period) {
@@ -756,6 +841,7 @@ function render() {
   renderPlayerCards(playerStats);
   renderACWR(bienestarFull.filter(r=>r.contexto!=='rehab'), rawData.entrenos);
   renderActiveChart(bienestar, bienestarFull, entrenos);
+  renderHoy();
 }
 
 // ── HERO KPIs ─────────────────────────────────────────────
@@ -1366,6 +1452,145 @@ function setAIPlaceholder() {
     const el = document.getElementById('ai-' + p.nombre.replace(/\s+/g,'_'));
     if (el) el.innerHTML = `<div style="padding:12px 18px;font-size:.68rem;color:var(--text-dim);letter-spacing:.04em">Sin análisis · pulsa «Actualizar análisis» tras el entrenamiento</div>`;
   });
+}
+
+// ── HOY ───────────────────────────────────────────────────
+function renderHoy() {
+  if (!rawData) return;
+  const todayKey = dk(new Date());
+  const sevenDaysAgo = new Date(); sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+
+  let activePlayers;
+  if (rawData.jugadores && rawData.jugadores.length) {
+    activePlayers = rawData.jugadores.filter(j => j.estado !== 'baja').map(j => j.nombre);
+  } else {
+    activePlayers = [...new Set(rawData.bienestar.map(r => r.jugador))].filter(Boolean);
+  }
+
+  const todayReported = new Set(
+    rawData.bienestar.filter(r => dk(r.fecha) === todayKey).map(r => r.jugador)
+  );
+
+  const lastRecord = {};
+  rawData.bienestar.forEach(r => {
+    const prev = lastRecord[r.jugador];
+    if (!prev || r.fecha > prev.fecha) lastRecord[r.jugador] = r;
+  });
+
+  const stats7 = computePlayerStats(
+    rawData.bienestar.filter(r => toDate(r.fecha) >= sevenDaysAgo),
+    rawData.entrenos
+  ).filter(Boolean);
+  const statsByName = {};
+  stats7.forEach(s => { statsByName[s.nombre] = s; });
+
+  const daysSinceReport = {};
+  activePlayers.forEach(nombre => {
+    const recs = rawData.bienestar.filter(r => r.jugador === nombre);
+    if (!recs.length) { daysSinceReport[nombre] = 999; return; }
+    const last = recs.reduce((a,b) => a.fecha > b.fecha ? a : b);
+    daysSinceReport[nombre] = Math.floor((new Date() - toDate(last.fecha)) / 86400000);
+  });
+
+  // Estado del equipo
+  const reportadosHoy  = activePlayers.filter(p => todayReported.has(p)).length;
+  const enRiesgo       = activePlayers.filter(p => statsByName[p]?.riesgo === 'RIESGO').length;
+  const enAtencion     = activePlayers.filter(p => statsByName[p]?.riesgo === 'ATENCIÓN').length;
+  const sinReportarHoy = activePlayers.filter(p => !todayReported.has(p)).length;
+
+  let estadoTexto, estadoClase;
+  if (enRiesgo > 0) {
+    estadoTexto = enRiesgo === 1 ? '1 jugador en riesgo' : enRiesgo + ' jugadores en riesgo';
+    estadoClase = 'riesgo';
+  } else if (enAtencion > 0 || sinReportarHoy > activePlayers.length * 0.5) {
+    estadoTexto = 'Atención recomendada';
+    estadoClase = 'atencion';
+  } else {
+    estadoTexto = 'Equipo en buen estado';
+    estadoClase = 'bien';
+  }
+
+  const heroEstado = document.getElementById('hoy-estado-text');
+  const heroSub    = document.getElementById('hoy-sub');
+  if (heroEstado) { heroEstado.textContent = estadoTexto; heroEstado.className = 'hoy-hero-estado ' + estadoClase; }
+  if (heroSub)    heroSub.textContent = reportadosHoy + ' de ' + activePlayers.length + ' jugadores han reportado hoy';
+
+  // Alertas
+  const alertasEl = document.getElementById('hoy-alertas');
+  const jugadoresConAlerta = activePlayers
+    .filter(p => statsByName[p] && statsByName[p].riesgo !== 'ÓPTIMO')
+    .sort((a,b) => {
+      const order = { 'RIESGO': 0, 'ATENCIÓN': 1 };
+      return (order[statsByName[a]?.riesgo] ?? 2) - (order[statsByName[b]?.riesgo] ?? 2);
+    });
+
+  if (!jugadoresConAlerta.length) {
+    alertasEl.innerHTML = '<div class="hoy-empty">Sin alertas activas</div>';
+  } else {
+    alertasEl.innerHTML = jugadoresConAlerta.map(nombre => {
+      const s   = statsByName[nombre];
+      const cls = s.riesgo === 'RIESGO' ? 'riesgo' : 'atencion';
+      let motivo = '';
+      if (s.lesion)                             motivo = 'Lesión: ' + s.lesion;
+      else if (s.acwr !== null && s.acwr > 1.5) motivo = 'Carga muy elevada esta semana';
+      else if (s.acwr !== null && s.acwr > 1.3) motivo = 'Carga alta esta semana';
+      else if (s.hooAvg < 14)                   motivo = 'Bienestar muy bajo';
+      else if (s.hooAvg < 18)                   motivo = 'Bienestar bajo';
+      else                                       motivo = 'Revisar estado';
+      return `<div class="hoy-alert-row ${cls}">
+        <div class="hoy-alert-dot ${cls}"></div>
+        <div style="flex:1">
+          <div class="hoy-alert-name">${nombre}</div>
+          <div class="hoy-alert-reason">${motivo}</div>
+        </div>
+        <div class="hoy-alert-badge ${cls}">${s.riesgo}</div>
+      </div>`;
+    }).join('');
+  }
+
+  // Sin reportar
+  const missingEl   = document.getElementById('hoy-missing');
+  const sinReportar = activePlayers.filter(p => !todayReported.has(p));
+  if (!sinReportar.length) {
+    missingEl.innerHTML = '<div class="hoy-empty">Todos han reportado hoy</div>';
+  } else {
+    missingEl.innerHTML = sinReportar.map(nombre => {
+      const days     = daysSinceReport[nombre];
+      const daysText = days === 999 ? 'Sin registros' :
+                       days <= 1   ? '' :
+                       days === 2  ? 'Ayer tampoco' :
+                       'Lleva ' + days + ' días sin reportar';
+      const daysStyle = days >= 2 ? 'color:var(--amber)' : '';
+      return `<div class="hoy-missing-row">
+        <div class="hoy-missing-name">${nombre}</div>
+        <div class="hoy-missing-days" style="${daysStyle}">${daysText}</div>
+      </div>`;
+    }).join('');
+  }
+
+  // Plantilla completa
+  const plantillaEl = document.getElementById('hoy-plantilla');
+  const sorted = [...activePlayers].sort((a,b) => {
+    const order = { 'RIESGO': 0, 'ATENCIÓN': 1, 'ÓPTIMO': 2 };
+    return (order[statsByName[a]?.riesgo] ?? 3) - (order[statsByName[b]?.riesgo] ?? 3);
+  });
+
+  plantillaEl.innerHTML = sorted.map(nombre => {
+    const s          = statsByName[nombre];
+    const lr         = lastRecord[nombre];
+    const reportoHoy = todayReported.has(nombre);
+    const semClass   = s ? (s.riesgo === 'RIESGO' ? 'riesgo' : s.riesgo === 'ATENCIÓN' ? 'atencion' : 'bien') : 'sin-datos';
+    const hooStr     = lr ? lr.total + '/28' : '—';
+    const hooColor   = lr ? (lr.total >= 22 ? 'color:var(--green)' : lr.total >= 14 ? 'color:var(--amber)' : 'color:var(--red)') : '';
+    const acwrStr    = (s?.acwr !== null && s?.acwr !== undefined) ? 'ACWR ' + s.acwr : '—';
+    const acwrColor  = s?.acwr > 1.5 ? 'color:var(--red)' : s?.acwr > 1.3 ? 'color:var(--amber)' : '';
+    return `<div class="hoy-player-row" style="${!reportoHoy ? 'opacity:.5' : ''}">
+      <div class="hoy-semaforo ${semClass}"></div>
+      <div class="hoy-player-name">${nombre}${!reportoHoy ? ' <span style="font-size:.65rem;color:var(--text-dim)">· sin reportar</span>' : ''}</div>
+      <div class="hoy-player-hooper" style="${hooColor}">${hooStr}</div>
+      <div class="hoy-player-acwr" style="${acwrColor}">${acwrStr}</div>
+    </div>`;
+  }).join('');
 }
 
 // ── CHART TABS ────────────────────────────────────────────
