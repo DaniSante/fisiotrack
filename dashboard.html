@@ -354,6 +354,29 @@
       .pc-stats   { grid-template-columns: repeat(2, 1fr); }
       .pulse-bar  { grid-template-columns: repeat(2, 1fr); }
     }
+
+    /* ── MAIN TABS ── */
+    .main-tabs-bar {
+      position: sticky; top: 57px; z-index: 90;
+      background: rgba(8,8,12,.92); backdrop-filter: blur(28px);
+      border-bottom: 1px solid var(--border-lo);
+      padding: 0 16px;
+    }
+    .main-tabs {
+      display: flex; max-width: 900px; margin: 0 auto;
+    }
+    .main-tab {
+      flex: 1; padding: 12px 8px; font-size: .72rem; font-weight: 400;
+      letter-spacing: .12em; text-transform: uppercase;
+      background: transparent; border: none; color: var(--text-dim);
+      cursor: pointer; border-bottom: 2px solid transparent;
+      transition: all .15s; font-family: var(--sans);
+    }
+    .main-tab:hover { color: var(--text-mid); }
+    .main-tab.active { color: var(--teal-hi); border-bottom-color: var(--teal-hi); }
+
+    .main-panel { display: none; }
+    .main-panel.active { display: block; }
   </style>
 </head>
 <body>
@@ -386,130 +409,172 @@
       <div class="hdr-team" id="hdr-team">—</div>
     </div>
   </div>
-  <div class="period-tabs">
-    <button class="period-tab active" onclick="setPeriod('semana',this)">Semana</button>
-    <button class="period-tab" onclick="setPeriod('mes',this)">Mes</button>
-    <button class="period-tab" onclick="setPeriod('trimestre',this)">Trimestre</button>
-    <button class="period-tab" onclick="setPeriod('temporada',this)">Temporada</button>
-  </div>
   <div class="hdr-right">
     <button class="btn-back" onclick="goStaff()">← Staff</button>
   </div>
 </div>
 
-<!-- HERO KPI STRIP -->
-<div class="hero-strip">
-  <div class="hero-kpi">
-    <div class="hero-kpi-label">Hooper medio</div>
-    <div class="hero-kpi-num" id="h-hooper">—</div>
-    <div class="hero-kpi-sub" id="h-hooper-sub">/ 28 máximo</div>
-    <div id="h-hooper-trend" style="display:none"></div>
-  </div>
-  <div class="hero-kpi">
-    <div class="hero-kpi-label">Carga equipo (sRPE)</div>
-    <div class="hero-kpi-num teal" id="h-srpe">—</div>
-    <div class="hero-kpi-sub" id="h-srpe-sub">UA por sesión</div>
-    <div id="h-srpe-badges" class="hero-kpi-badges"></div>
-  </div>
-  <div class="hero-kpi">
-    <div class="hero-kpi-label">ACWR</div>
-    <div class="hero-kpi-num" id="h-acwr">—</div>
-    <div class="hero-kpi-sub" id="h-acwr-sub">carga aguda / crónica</div>
-    <div id="h-acwr-badge" class="hero-kpi-badges"></div>
-  </div>
-  <div class="hero-kpi">
-    <div class="hero-kpi-label">Estado plantilla</div>
-    <div class="hero-kpi-num" id="h-lesiones">—</div>
-    <div class="hero-kpi-sub" id="h-lesiones-sub">disponibles</div>
-    <div id="h-lesiones-badges" class="hero-kpi-badges"></div>
+<!-- MAIN TABS BAR -->
+<div class="main-tabs-bar">
+  <div class="main-tabs">
+    <button class="main-tab active" onclick="switchMainTab('hoy', this)">Hoy</button>
+    <button class="main-tab" onclick="switchMainTab('carga', this)">Carga</button>
+    <button class="main-tab" onclick="switchMainTab('plantilla', this)">Plantilla</button>
+    <button class="main-tab" onclick="switchMainTab('analisis', this)">Análisis</button>
   </div>
 </div>
 
-<!-- TEAM PULSE BAR -->
-<div class="pulse-bar" id="pulse-bar">
-  <div class="pulse-cell">
-    <div class="pulse-label">Sesiones período</div>
-    <div class="pulse-val" id="p-sesiones">—</div>
-  </div>
-  <div class="pulse-cell">
-    <div class="pulse-label">RPE medio</div>
-    <div class="pulse-val" id="p-rpe">—</div>
-  </div>
-  <div class="pulse-cell">
-    <div class="pulse-label">Sueño medio</div>
-    <div class="pulse-val" id="p-sueno">—</div>
-  </div>
-  <div class="pulse-cell">
-    <div class="pulse-label">Alertas Hooper</div>
-    <div class="pulse-val" id="p-alertas">—</div>
-  </div>
-  <div class="pulse-cell">
-    <div class="pulse-label">Sin datos hoy</div>
-    <div class="pulse-val" id="p-missing">—</div>
+<!-- PANEL HOY -->
+<div class="main-panel active" id="panel-hoy">
+  <div class="main">
+    <div style="padding:40px 0;text-align:center;color:var(--text-dim);font-size:.82rem;">
+      Vista "Hoy" próximamente
+    </div>
   </div>
 </div>
 
-<!-- MAIN -->
-<div class="main">
+<!-- PANEL CARGA -->
+<div class="main-panel" id="panel-carga">
 
-  <!-- PLAYER ANALYSIS SECTION -->
-  <div class="sec-hdr">
-    <div class="sec-hdr-left">
-      <div class="sec-title">Análisis individual</div>
-      <div class="sec-count" id="players-count">—</div>
-      <div class="ai-status" id="ai-status" style="display:none">
-        <div class="mini-spin"></div>
-        Generando análisis…
-      </div>
+  <div class="hero-strip">
+    <div class="hero-kpi">
+      <div class="hero-kpi-label">Hooper medio</div>
+      <div class="hero-kpi-num" id="h-hooper">—</div>
+      <div class="hero-kpi-sub" id="h-hooper-sub">/ 28 máximo</div>
+      <div id="h-hooper-trend" style="display:none"></div>
     </div>
-    <div style="display:flex;align-items:center;gap:10px">
-      <div id="ai-timestamp" style="font-size:.58rem;color:var(--text-dim);letter-spacing:.08em"></div>
-      <button class="btn-teal" id="btn-update" onclick="refreshAI()">Actualizar análisis</button>
+    <div class="hero-kpi">
+      <div class="hero-kpi-label">Carga equipo (sRPE)</div>
+      <div class="hero-kpi-num teal" id="h-srpe">—</div>
+      <div class="hero-kpi-sub" id="h-srpe-sub">UA por sesión</div>
+      <div id="h-srpe-badges" class="hero-kpi-badges"></div>
+    </div>
+    <div class="hero-kpi">
+      <div class="hero-kpi-label">ACWR</div>
+      <div class="hero-kpi-num" id="h-acwr">—</div>
+      <div class="hero-kpi-sub" id="h-acwr-sub">carga aguda / crónica</div>
+      <div id="h-acwr-badge" class="hero-kpi-badges"></div>
+    </div>
+    <div class="hero-kpi">
+      <div class="hero-kpi-label">Estado plantilla</div>
+      <div class="hero-kpi-num" id="h-lesiones">—</div>
+      <div class="hero-kpi-sub" id="h-lesiones-sub">disponibles</div>
+      <div id="h-lesiones-badges" class="hero-kpi-badges"></div>
     </div>
   </div>
-  <div class="player-grid" id="player-grid">
-    <div class="empty-state"><div class="empty-icon">👥</div>Cargando jugadores…</div>
+
+  <div class="pulse-bar" id="pulse-bar">
+    <div class="pulse-cell">
+      <div class="pulse-label">Sesiones período</div>
+      <div class="pulse-val" id="p-sesiones">—</div>
+    </div>
+    <div class="pulse-cell">
+      <div class="pulse-label">RPE medio</div>
+      <div class="pulse-val" id="p-rpe">—</div>
+    </div>
+    <div class="pulse-cell">
+      <div class="pulse-label">Sueño medio</div>
+      <div class="pulse-val" id="p-sueno">—</div>
+    </div>
+    <div class="pulse-cell">
+      <div class="pulse-label">Alertas Hooper</div>
+      <div class="pulse-val" id="p-alertas">—</div>
+    </div>
+    <div class="pulse-cell">
+      <div class="pulse-label">Sin datos hoy</div>
+      <div class="pulse-val" id="p-missing">—</div>
+    </div>
   </div>
 
-  <!-- CHARTS SECTION -->
-  <div class="charts-section">
-    <div class="sec-hdr" style="padding-top:20px">
-      <div class="sec-title">Datos del equipo</div>
-      <div class="sec-count" id="period-label-sm"></div>
-    </div>
-    <div class="chart-tabs">
-      <button class="chart-tab active" onclick="showChartTab('bienestar',this)">Bienestar</button>
-      <button class="chart-tab" onclick="showChartTab('carga',this)">Carga &amp; ACWR</button>
-      <button class="chart-tab" onclick="showChartTab('radar',this)">Radar</button>
-      <button class="chart-tab" onclick="showChartTab('heatmap',this)">Heatmap</button>
-    </div>
-
-    <div class="chart-panel active" id="panel-bienestar">
-      <div class="chart-wrap"><canvas id="chart-wellness"></canvas></div>
-    </div>
-
-    <div class="chart-panel" id="panel-carga">
-      <div class="acwr-legend">
-        <div class="acwr-zone"><div class="acwr-dot" style="background:#4BA882"></div>Carga aguda (UA)</div>
-        <div class="acwr-zone"><div class="acwr-dot" style="background:#60a5fa"></div>ACWR EWMA (λ=0.25/0.069)</div>
-        <div class="acwr-zone" style="font-size:.6rem;color:var(--text-dim)">Alertas por cambio semanal (&gt;10%/15%/−20%)</div>
+  <div class="main">
+    <div style="display:flex;justify-content:flex-end;padding:16px 0 8px;">
+      <div class="period-tabs">
+        <button class="period-tab active" onclick="setPeriod('semana',this)">Semana</button>
+        <button class="period-tab" onclick="setPeriod('mes',this)">Mes</button>
+        <button class="period-tab" onclick="setPeriod('trimestre',this)">Trimestre</button>
+        <button class="period-tab" onclick="setPeriod('temporada',this)">Temporada</button>
       </div>
-      <div class="chart-wrap"><canvas id="chart-acwr"></canvas></div>
     </div>
-
-    <div class="chart-panel" id="panel-radar">
-      <div class="player-sel" id="player-sel"></div>
-      <div class="chart-wrap"><canvas id="chart-radar"></canvas></div>
+    <div class="charts-section">
+      <div class="sec-hdr" style="padding-top:8px">
+        <div class="sec-title">Carga &amp; ACWR</div>
+      </div>
+      <div id="panel-carga-chart" style="background:var(--surface);border:1px solid var(--border);border-radius:var(--r-lg);padding:24px;">
+        <div class="acwr-legend">
+          <div class="acwr-zone"><div class="acwr-dot" style="background:#4BA882"></div>Carga aguda (UA)</div>
+          <div class="acwr-zone"><div class="acwr-dot" style="background:#60a5fa"></div>ACWR EWMA (λ=0.25/0.069)</div>
+          <div class="acwr-zone" style="font-size:.6rem;color:var(--text-dim)">Alertas por cambio semanal (&gt;10%/15%/−20%)</div>
+        </div>
+        <div class="chart-wrap"><canvas id="chart-acwr"></canvas></div>
+      </div>
     </div>
+  </div>
 
-    <div class="chart-panel" id="panel-heatmap">
-      <div class="chart-sub-label">Hooper Index diario por jugador · últimos 28 días</div>
-      <div class="hm-wrap"><div id="hm-grid" class="hm-grid"></div></div>
-      <div class="hm-legend">
-        <div class="hm-leg-item"><div class="hm-leg-dot" style="background:rgba(168,197,160,.35)"></div>Bueno (≥22)</div>
-        <div class="hm-leg-item"><div class="hm-leg-dot" style="background:rgba(201,169,110,.3)"></div>Normal (15–21)</div>
-        <div class="hm-leg-item"><div class="hm-leg-dot" style="background:rgba(192,112,112,.35)"></div>Alerta (≤14)</div>
-        <div class="hm-leg-item"><div class="hm-leg-dot" style="background:var(--surface2);border:1px solid var(--border)"></div>Sin dato</div>
+</div>
+
+<!-- PANEL PLANTILLA -->
+<div class="main-panel" id="panel-plantilla">
+  <div class="main">
+    <div style="display:flex;justify-content:flex-end;padding:16px 0 8px;">
+      <div class="period-tabs">
+        <button class="period-tab" onclick="setPeriod('semana',this)">Semana</button>
+        <button class="period-tab" onclick="setPeriod('mes',this)">Mes</button>
+        <button class="period-tab" onclick="setPeriod('trimestre',this)">Trimestre</button>
+        <button class="period-tab" onclick="setPeriod('temporada',this)">Temporada</button>
+      </div>
+    </div>
+    <div class="sec-hdr">
+      <div class="sec-hdr-left">
+        <div class="sec-title">Análisis individual</div>
+        <div class="sec-count" id="players-count">—</div>
+        <div class="ai-status" id="ai-status" style="display:none">
+          <div class="mini-spin"></div>
+          Generando análisis…
+        </div>
+      </div>
+      <div style="display:flex;align-items:center;gap:10px">
+        <div id="ai-timestamp" style="font-size:.58rem;color:var(--text-dim);letter-spacing:.08em"></div>
+        <button class="btn-teal" id="btn-update" onclick="refreshAI()">Actualizar análisis</button>
+      </div>
+    </div>
+    <div class="player-grid" id="player-grid">
+      <div class="empty-state"><div class="empty-icon">👥</div>Cargando jugadores…</div>
+    </div>
+  </div>
+</div>
+
+<!-- PANEL ANÁLISIS -->
+<div class="main-panel" id="panel-analisis">
+  <div class="main">
+    <div class="charts-section">
+      <div class="sec-hdr" style="padding-top:20px">
+        <div class="sec-title">Datos del equipo</div>
+        <div class="sec-count" id="period-label-sm"></div>
+      </div>
+      <div class="chart-tabs">
+        <button class="chart-tab active" onclick="showChartTab('bienestar',this)">Bienestar</button>
+        <button class="chart-tab" onclick="showChartTab('radar',this)">Radar</button>
+        <button class="chart-tab" onclick="showChartTab('heatmap',this)">Heatmap</button>
+      </div>
+
+      <div class="chart-panel active" id="panel-bienestar">
+        <div class="chart-wrap"><canvas id="chart-wellness"></canvas></div>
+      </div>
+
+      <div class="chart-panel" id="panel-radar">
+        <div class="player-sel" id="player-sel"></div>
+        <div class="chart-wrap"><canvas id="chart-radar"></canvas></div>
+      </div>
+
+      <div class="chart-panel" id="panel-heatmap">
+        <div class="chart-sub-label">Hooper Index diario por jugador · últimos 28 días</div>
+        <div class="hm-wrap"><div id="hm-grid" class="hm-grid"></div></div>
+        <div class="hm-legend">
+          <div class="hm-leg-item"><div class="hm-leg-dot" style="background:rgba(168,197,160,.35)"></div>Bueno (≥22)</div>
+          <div class="hm-leg-item"><div class="hm-leg-dot" style="background:rgba(201,169,110,.3)"></div>Normal (15–21)</div>
+          <div class="hm-leg-item"><div class="hm-leg-dot" style="background:rgba(192,112,112,.35)"></div>Alerta (≤14)</div>
+          <div class="hm-leg-item"><div class="hm-leg-dot" style="background:var(--surface2);border:1px solid var(--border)"></div>Sin dato</div>
+        </div>
       </div>
     </div>
   </div>
@@ -637,10 +702,20 @@ async function init() {
 function setPeriod(period, btn) {
   currentPeriod = period;
   aiAnalyses = {};
-  document.querySelectorAll('.period-tab').forEach(b => b.classList.remove('active'));
-  btn.classList.add('active');
+  document.querySelectorAll('.period-tab').forEach(b => {
+    const onc = b.getAttribute('onclick') || '';
+    b.classList.toggle('active', onc.includes("'" + period + "'"));
+  });
   render();
   loadStoredAnalysis();
+}
+
+function switchMainTab(tab, btn) {
+  document.querySelectorAll('.main-tab').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('.main-panel').forEach(p => p.classList.remove('active'));
+  if (btn) btn.classList.add('active');
+  const panel = document.getElementById('panel-' + tab);
+  if (panel) panel.classList.add('active');
 }
 
 function getCutoff(period) {
@@ -679,6 +754,7 @@ function render() {
   renderPulse(bienestar, bienestarFull, entrenos);
   playerStats = computePlayerStats(bienestarFull, entrenos);
   renderPlayerCards(playerStats);
+  renderACWR(bienestarFull.filter(r=>r.contexto!=='rehab'), rawData.entrenos);
   renderActiveChart(bienestar, bienestarFull, entrenos);
 }
 
@@ -1308,7 +1384,6 @@ function showChartTab(tab, btn) {
 
 function renderActiveChart(bienestar, bienestarFull, entrenos) {
   if (activeChartTab === 'bienestar') renderWellness(bienestar);
-  if (activeChartTab === 'carga')     renderACWR(bienestarFull.filter(r=>r.contexto!=='rehab'), rawData.entrenos);
   if (activeChartTab === 'radar')     renderRadar(bienestar);
   if (activeChartTab === 'heatmap')   renderHeatmap(rawData.bienestar);
 }
