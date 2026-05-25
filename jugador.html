@@ -680,7 +680,7 @@ async function loadPlayerNames() {
     if (data.ok && data.players) {
       const parsed = JSON.parse(data.players);
       playerNames = parsed
-        .filter(p => p.estado === 'activo')
+        .filter(p => p.estado !== 'baja')
         .map(p => p.nombre)
         .filter(Boolean);
       setupAutocomplete();
