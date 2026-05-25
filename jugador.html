@@ -616,6 +616,7 @@ async function guardar() {
   const missingFields = [];
   if (!sueno)  { document.getElementById('sc-sueno').classList.add('field-error');  missingFields.push('Sueño'); }
   if (!fatiga) { document.getElementById('sc-fatiga').classList.add('field-error'); missingFields.push('Fatiga'); }
+  if (!dolor)  { document.getElementById('sc-dolor').classList.add('field-error');  missingFields.push('Dolor muscular'); }
   if (!estres) { document.getElementById('sc-estres').classList.add('field-error'); missingFields.push('Estrés'); }
   if (!rpe)    { document.getElementById('sc-rpe').classList.add('field-error');    missingFields.push('RPE'); }
   if (missingFields.length) {
