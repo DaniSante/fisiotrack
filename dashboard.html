@@ -801,6 +801,15 @@ function switchMainTab(tab, btn) {
   const panel = document.getElementById('panel-' + tab);
   if (panel) panel.classList.add('active');
   if (tab === 'hoy') renderHoy();
+  if (tab === 'carga' || tab === 'analisis') {
+    setTimeout(() => {
+      const cutoff        = getCutoff(currentPeriod);
+      const bienestarFull = rawData.bienestar.filter(r => toDate(r.fecha) >= cutoff);
+      const bienestar     = bienestarFull.filter(r => r.contexto !== 'rehab');
+      const entrenos      = rawData.entrenos.filter(r => toDate(r.fecha) >= cutoff);
+      renderActiveChart(bienestar, bienestarFull, entrenos);
+    }, 50);
+  }
 }
 
 function getCutoff(period) {
