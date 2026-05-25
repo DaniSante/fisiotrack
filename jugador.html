@@ -189,6 +189,8 @@ textarea:focus { outline: none; border-color: var(--ai-border); box-shadow: 0 0 
 .d3 { background:var(--amber-mid); border-color:var(--amber);  color:var(--amber); }
 .d4 { background:var(--green-mid); border-color:var(--green);  color:var(--green); }
 .d5 { background:var(--green-hi);  border-color:var(--green);  color:var(--green); }
+.d6 { background:var(--green-mid); border-color:var(--green);  color:var(--green); }
+.d7 { background:var(--green-hi);  border-color:var(--green);  color:var(--green); }
 
 /* RPE 1-10 */
 .rpe-grid { display: grid; grid-template-columns: repeat(5,1fr); gap: 6px; margin-top: 14px; }
@@ -530,6 +532,16 @@ try {
     const tnhdr = document.getElementById('team-name-hdr');
     if (tnhdr) tnhdr.textContent = cached || 'Cargando…';
     showForm();
+    fetch(SCRIPT_URL, {
+      method: 'POST',
+      body: JSON.stringify({ action: 'load_players', teamId: TEAM_ID, teamKey: TEAM_KEY })
+    }).then(r => r.json()).then(data => {
+      if (data.teamName) {
+        localStorage.setItem('ft_team_name_' + TEAM_ID, data.teamName);
+        const hdrTeam = document.getElementById('team-name-hdr');
+        if (hdrTeam) hdrTeam.textContent = data.teamName;
+      }
+    }).catch(() => {});
     loadPlayerNames();
   }
 } catch(e) {
@@ -540,7 +552,7 @@ try {
 
 // ── DOTS bienestar ──────────────────────────────────────
 function pickDot(groupId, hiddenId, val) {
-  const map = {1:'d1',2:'d2',3:'d3',4:'d4',5:'d5'};
+  const map = {1:'d1',2:'d2',3:'d3',4:'d4',5:'d5',6:'d6',7:'d7'};
   document.getElementById(groupId).querySelectorAll('.dot').forEach((d,i)=>{
     d.className='dot'; if(i+1===val) d.classList.add(map[val]);
   });
