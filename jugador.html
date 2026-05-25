@@ -260,6 +260,8 @@ textarea:focus { outline: none; border-color: var(--ai-border); box-shadow: 0 0 
 @keyframes spin { to { transform: rotate(360deg); } }
 .spin { display: inline-block; width: 16px; height: 16px; border: 2px solid rgba(255,255,255,.15); border-top-color: var(--ai-bright); border-radius: 50%; animation: spin .6s linear infinite; }
 @keyframes fadeUp { from { opacity:0; transform:translateY(8px); } to { opacity:1; transform:translateY(0); } }
+@keyframes fieldError { 0%,100% { outline: none; } 20%,70% { outline: 2px solid var(--ai-red,#c07070); outline-offset: 3px; border-radius: 4px; } }
+.field-error { animation: fieldError .65s ease; }
 
 /* TOAST */
 #toast {
@@ -608,12 +610,21 @@ async function guardar() {
   const estres = document.getElementById('j-estres').value;
   const rpe    = document.getElementById('j-rpe').value;
 
-  if(!nombre)                       { toast('⚠️ Escribe tu nombre');               return; }
-  if(!tipo)                         { toast('⚠️ Selecciona el tipo de sesión');     return; }
-  if(!sueno||!fatiga||!dolor||!estres) { toast('⚠️ Completa las 4 escalas de bienestar'); return; }
-  if(!rpe)                          { toast('⚠️ Indica tu RPE');                   return; }
+  if(!nombre) { toast('⚠️ Escribe tu nombre');           return; }
+  if(!tipo)   { toast('⚠️ Selecciona el tipo de sesión'); return; }
 
-  const total = parseInt(sueno)+parseInt(fatiga)+parseInt(dolor)+parseInt(estres);
+  const missingFields = [];
+  if (!sueno)  { document.getElementById('sc-sueno').classList.add('field-error');  missingFields.push('Sueño'); }
+  if (!fatiga) { document.getElementById('sc-fatiga').classList.add('field-error'); missingFields.push('Fatiga'); }
+  if (!estres) { document.getElementById('sc-estres').classList.add('field-error'); missingFields.push('Estrés'); }
+  if (!rpe)    { document.getElementById('sc-rpe').classList.add('field-error');    missingFields.push('RPE'); }
+  if (missingFields.length) {
+    toast('⚠️ Rellena: ' + missingFields.join(', '));
+    setTimeout(() => document.querySelectorAll('.field-error').forEach(el => el.classList.remove('field-error')), 700);
+    return;
+  }
+
+  const total = (parseInt(sueno)||0)+(parseInt(fatiga)||0)+(parseInt(dolor)||0)+(parseInt(estres)||0);
   const lesion = document.getElementById('j-lesion-yn').value;
   const lesionTxt = document.getElementById('j-lesion-txt').value.trim();
   const comentario = document.getElementById('j-comentario').value.trim();
