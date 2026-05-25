@@ -692,6 +692,12 @@ let activeChartTab = 'bienestar';
 let selectedPlayer = null;
 let cWellness = null, cAcwr = null, cRadar = null;
 
+function resizeActiveCharts() {
+  [cWellness, cAcwr, cRadar].forEach(c => {
+    if (c) try { c.resize(); } catch(e) {}
+  });
+}
+
 Chart.defaults.color       = '#76767E';
 Chart.defaults.borderColor = '#1E1E26';
 Chart.defaults.font.family = "'Inter', sans-serif";
@@ -803,6 +809,7 @@ function switchMainTab(tab, btn) {
   if (tab === 'hoy') renderHoy();
   if (tab === 'carga' || tab === 'analisis') {
     setTimeout(() => {
+      resizeActiveCharts();
       const cutoff        = getCutoff(currentPeriod);
       const bienestarFull = rawData.bienestar.filter(r => toDate(r.fecha) >= cutoff);
       const bienestar     = bienestarFull.filter(r => r.contexto !== 'rehab');
