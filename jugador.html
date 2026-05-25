@@ -698,6 +698,9 @@ function setupAutocomplete() {
 
 // ── CONFIRM SCREEN ─────────────────────────────────────
 function showConfirm(hooper, rpe, fecha) {
+  const cached = localStorage.getItem('ft_team_name_' + TEAM_ID);
+  const hdrTeam = document.getElementById('team-name-hdr');
+  if (cached && hdrTeam) hdrTeam.textContent = cached;
   document.getElementById('form-content').style.display = 'none';
   document.getElementById('confirm-screen').style.display = 'block';
 
