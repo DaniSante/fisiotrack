@@ -352,7 +352,8 @@ textarea:focus { outline: none; border-color: var(--ai-border); box-shadow: 0 0 
   <div class="card">
     <div class="frow">
       <div class="flabel">Tu nombre</div>
-      <input type="text" id="j-nombre" placeholder="Nombre completo">
+      <input type="text" id="j-nombre" placeholder="Nombre completo" autocomplete="off" list="nombres-list">
+      <datalist id="nombres-list"></datalist>
     </div>
     <div class="frow">
       <div class="flabel">Fecha</div>
@@ -529,10 +530,12 @@ try {
     const tnhdr = document.getElementById('team-name-hdr');
     if (tnhdr) tnhdr.textContent = cached || 'Cargando…';
     showForm();
+    loadPlayerNames();
   }
 } catch(e) {
   // Si algo falla, forzar visibilidad del formulario para no quedar en negro
   showForm();
+  loadPlayerNames();
 }
 
 // ── DOTS bienestar ──────────────────────────────────────
@@ -620,13 +623,17 @@ async function guardar() {
     });
     const data = await r.json();
     if(data.ok) {
-      toast('✅ Datos guardados correctamente');
-      // Cache team name if returned
+      const hooVal = parseInt(document.getElementById('j-sueno').value||0)
+                   + parseInt(document.getElementById('j-fatiga').value||0)
+                   + parseInt(document.getElementById('j-dolor').value||0)
+                   + parseInt(document.getElementById('j-estres').value||0);
+      const rpeVal  = parseInt(document.getElementById('j-rpe').value||0);
+      const fechaVal = document.getElementById('j-fecha').value;
       if(data.teamName) {
         localStorage.setItem('ft_team_name_'+TEAM_ID, data.teamName);
         document.getElementById('team-name-hdr').textContent = data.teamName;
       }
-      setTimeout(limpiar, 1500);
+      showConfirm(hooVal, rpeVal, fechaVal);
     } else {
       toast('❌ ' + (data.error || 'Error al guardar'));
     }
@@ -658,6 +665,101 @@ function toast(msg) {
   const t=document.getElementById('toast'); t.textContent=msg; t.classList.add('show');
   setTimeout(()=>t.classList.remove('show'),3200);
 }
+
+// ── AUTOCOMPLETE ───────────────────────────────────────
+let playerNames = [];
+
+async function loadPlayerNames() {
+  if (!TEAM_ID || !TEAM_KEY) return;
+  try {
+    const r = await fetch(SCRIPT_URL, {
+      method: 'POST',
+      body: JSON.stringify({ action: 'load_players', teamId: TEAM_ID, teamKey: TEAM_KEY })
+    });
+    const data = await r.json();
+    if (data.ok && data.players) {
+      const parsed = JSON.parse(data.players);
+      playerNames = parsed
+        .filter(p => p.estado === 'activo')
+        .map(p => p.nombre)
+        .filter(Boolean);
+      setupAutocomplete();
+    }
+  } catch(e) {
+    // fallo silencioso — el input sigue funcionando como texto libre
+  }
+}
+
+function setupAutocomplete() {
+  const dl = document.getElementById('nombres-list');
+  if (!dl) return;
+  dl.innerHTML = playerNames.map(n => `<option value="${n}">`).join('');
+}
+
+// ── CONFIRM SCREEN ─────────────────────────────────────
+function showConfirm(hooper, rpe, fecha) {
+  document.getElementById('form-content').style.display = 'none';
+  document.getElementById('confirm-screen').style.display = 'block';
+
+  const fechaEl = document.getElementById('conf-fecha');
+  if (fechaEl) fechaEl.textContent = new Date(fecha + 'T12:00:00').toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long' });
+
+  const hooEl = document.getElementById('conf-hooper');
+  if (hooEl) {
+    hooEl.textContent = hooper + ' / 28';
+    hooEl.style.color = hooper >= 22 ? 'var(--green)' : hooper >= 15 ? 'var(--amber)' : 'var(--red)';
+  }
+
+  const rpeEl = document.getElementById('conf-rpe');
+  if (rpeEl) rpeEl.textContent = rpe + ' / 10';
+
+  const msgEl = document.getElementById('conf-msg');
+  if (msgEl) {
+    if (hooper <= 13) {
+      msgEl.textContent = 'Tu estado hoy es bajo. El staff lo verá en el dashboard.';
+      msgEl.style.background = 'var(--red-lo)';
+      msgEl.style.color = 'var(--red)';
+    } else if (hooper <= 21) {
+      msgEl.textContent = 'Estado normal. Sigue así.';
+      msgEl.style.background = 'var(--amber-lo)';
+      msgEl.style.color = 'var(--amber)';
+    } else {
+      msgEl.textContent = 'Buen estado hoy. ¡A tope!';
+      msgEl.style.background = 'var(--green-lo)';
+      msgEl.style.color = 'var(--green)';
+    }
+  }
+}
+
+function volverFormulario() {
+  document.getElementById('confirm-screen').style.display = 'none';
+  document.getElementById('form-content').style.display = 'block';
+  limpiar();
+}
 </script>
+
+<div id="confirm-screen" style="display:none; animation: fadeUp .25s ease;">
+  <div class="content" style="max-width:520px;margin:0 auto;padding:40px 20px;text-align:center;">
+    <div style="font-size:2.5rem;margin-bottom:16px">✅</div>
+    <div style="font-size:1rem;font-weight:400;margin-bottom:6px">Datos guardados</div>
+    <div style="font-size:.78rem;color:var(--text-dim);margin-bottom:28px" id="conf-fecha"></div>
+
+    <div style="background:var(--surface2);border:1px solid var(--border2);border-radius:var(--r);padding:20px;margin-bottom:12px;text-align:left;">
+      <div style="font-size:.6rem;letter-spacing:.16em;text-transform:uppercase;color:var(--text-dim);margin-bottom:12px">Tu estado hoy</div>
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+        <span style="font-size:.82rem;color:var(--text-mid)">Hooper Index</span>
+        <span style="font-size:1.2rem;font-weight:200" id="conf-hooper">—</span>
+      </div>
+      <div style="display:flex;justify-content:space-between;align-items:center;">
+        <span style="font-size:.82rem;color:var(--text-mid)">Esfuerzo (RPE)</span>
+        <span style="font-size:1.2rem;font-weight:200" id="conf-rpe">—</span>
+      </div>
+    </div>
+
+    <div id="conf-msg" style="font-size:.78rem;color:var(--text-dim);margin-bottom:28px;padding:10px 16px;border-radius:var(--r);"></div>
+
+    <button class="btn-ghost" onclick="volverFormulario()">Rellenar de nuevo</button>
+  </div>
+</div>
 </body>
 </html>
