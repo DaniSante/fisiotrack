@@ -730,16 +730,31 @@ function showConfirm(hooper, rpe, fecha) {
 
   const msgEl = document.getElementById('conf-msg');
   if (msgEl) {
+    const scales = [
+      { key: 'sueno',  val: parseInt(document.getElementById('j-sueno').value||0) },
+      { key: 'fatiga', val: parseInt(document.getElementById('j-fatiga').value||0) },
+      { key: 'dolor',  val: parseInt(document.getElementById('j-dolor').value||0) },
+      { key: 'estres', val: parseInt(document.getElementById('j-estres').value||0) }
+    ];
+    const worst = scales.reduce((a,b) => a.val <= b.val ? a : b);
+
+    const lowMessages = {
+      sueno:  'Intenta acostarte antes esta noche. El descanso es parte del entrenamiento.',
+      fatiga: 'Tu cuerpo pide recuperación. Aprovecha el día para descansar.',
+      dolor:  'Tienes agujetas o molestias. Avisa al staff.',
+      estres: 'El estrés afecta al rendimiento. Intenta desconectar un rato antes del entrenamiento.'
+    };
+
     if (hooper <= 13) {
-      msgEl.textContent = 'Tu estado hoy es bajo. El staff lo verá en el dashboard.';
+      msgEl.textContent = lowMessages[worst.key];
       msgEl.style.background = 'var(--red-lo)';
       msgEl.style.color = 'var(--red)';
     } else if (hooper <= 21) {
-      msgEl.textContent = 'Estado normal. Sigue así.';
+      msgEl.textContent = 'Buen camino. Mantén tus rutinas de descanso y alimentación.';
       msgEl.style.background = 'var(--amber-lo)';
       msgEl.style.color = 'var(--amber)';
     } else {
-      msgEl.textContent = 'Buen estado hoy. ¡A tope!';
+      msgEl.textContent = 'Llegas en plena forma. Aprovecha la sesión de hoy.';
       msgEl.style.background = 'var(--green-lo)';
       msgEl.style.color = 'var(--green)';
     }
