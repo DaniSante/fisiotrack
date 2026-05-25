@@ -859,9 +859,14 @@ function computeWeeklyLoadChange(bienestar, allEntrenos) {
 // ── PULSE BAR ─────────────────────────────────────────────
 function renderPulse(bienestar, bienestarFull, entrenos) {
   const todayKey = dk(new Date());
-  const allPlayers = [...new Set(bienestarFull.map(r=>r.jugador))].filter(Boolean);
+  let activePlayers;
+  if (rawData.jugadores && rawData.jugadores.length) {
+    activePlayers = rawData.jugadores.filter(j => j.estado === 'activo').map(j => j.nombre);
+  } else {
+    activePlayers = [...new Set(bienestarFull.map(r=>r.jugador))].filter(Boolean);
+  }
   const todayReported = [...new Set(bienestar.filter(r=>dk(r.fecha)===todayKey).map(r=>r.jugador))];
-  const missing = allPlayers.filter(p => !todayReported.includes(p)).length;
+  const missing = activePlayers.filter(p => !todayReported.includes(p)).length;
 
   const eByDate = {};
   entrenos.forEach(r => { const d=dk(r.fecha); if(d) eByDate[d]=r; });
@@ -1021,8 +1026,10 @@ function computePlayerStats(bienestarFull, entrenos) {
     const lesion   = latest && latest.lesion && latest.lesion!=='N' && latest.lesion.toLowerCase()!=='no'
       ? (latest.descripcionLesion && latest.descripcionLesion.trim() ? latest.descripcionLesion : 'Lesión activa') : '';
 
-    const alertas  = curr.filter(r=>r.total>0&&r.total<=13).length;
-    const alertPct = curr.length ? alertas/curr.length : 0;
+    const sevenDaysAgo = new Date(); sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+    const last7 = curr.filter(r => toDate(r.fecha) >= sevenDaysAgo);
+    const alertas  = last7.filter(r => r.total > 0 && r.total <= 13).length;
+    const alertPct = last7.length ? alertas / last7.length : 0;
     const regularidad = Math.round((curr.length / pLen) * 100);
 
     let riesgo;
@@ -1070,14 +1077,14 @@ function renderPlayerCards(stats) {
     const pctR = Math.round((p.rpe/10)*100);
 
     // SWC above-baseline (mejora) ▲ y below-baseline (deterioro) ▼
-    const swcS = (p.swcAlerts?.sueno   ? ' <span style="color:var(--teal-hi);font-size:.5rem;vertical-align:middle" title="Por encima de tu baseline">▲</span>' : '')
-               + (p.swcWarnings?.sueno  ? ' <span style="color:var(--red);font-size:.5rem;vertical-align:middle" title="Caída significativa vs baseline">▼</span>' : '');
-    const swcF = (p.swcAlerts?.fatiga  ? ' <span style="color:var(--teal-hi);font-size:.5rem;vertical-align:middle" title="Por encima de tu baseline">▲</span>' : '')
-               + (p.swcWarnings?.fatiga ? ' <span style="color:var(--red);font-size:.5rem;vertical-align:middle" title="Caída significativa vs baseline">▼</span>' : '');
-    const swcD = (p.swcAlerts?.dolor   ? ' <span style="color:var(--teal-hi);font-size:.5rem;vertical-align:middle" title="Por encima de tu baseline">▲</span>' : '')
-               + (p.swcWarnings?.dolor  ? ' <span style="color:var(--red);font-size:.5rem;vertical-align:middle" title="Caída significativa vs baseline">▼</span>' : '');
-    const swcE = (p.swcAlerts?.estres  ? ' <span style="color:var(--teal-hi);font-size:.5rem;vertical-align:middle" title="Por encima de tu baseline">▲</span>' : '')
-               + (p.swcWarnings?.estres ? ' <span style="color:var(--red);font-size:.5rem;vertical-align:middle" title="Caída significativa vs baseline">▼</span>' : '');
+    const swcS = (p.swcAlerts?.sueno   ? ' <span style="color:var(--teal-hi);font-size:.5rem;vertical-align:middle" title="Mejora respecto a su nivel habitual">▲</span>' : '')
+               + (p.swcWarnings?.sueno  ? ' <span style="color:var(--red);font-size:.5rem;vertical-align:middle" title="Deterioro respecto a su nivel habitual">▼</span>' : '');
+    const swcF = (p.swcAlerts?.fatiga  ? ' <span style="color:var(--teal-hi);font-size:.5rem;vertical-align:middle" title="Mejora respecto a su nivel habitual">▲</span>' : '')
+               + (p.swcWarnings?.fatiga ? ' <span style="color:var(--red);font-size:.5rem;vertical-align:middle" title="Deterioro respecto a su nivel habitual">▼</span>' : '');
+    const swcD = (p.swcAlerts?.dolor   ? ' <span style="color:var(--teal-hi);font-size:.5rem;vertical-align:middle" title="Mejora respecto a su nivel habitual">▲</span>' : '')
+               + (p.swcWarnings?.dolor  ? ' <span style="color:var(--red);font-size:.5rem;vertical-align:middle" title="Deterioro respecto a su nivel habitual">▼</span>' : '');
+    const swcE = (p.swcAlerts?.estres  ? ' <span style="color:var(--teal-hi);font-size:.5rem;vertical-align:middle" title="Mejora respecto a su nivel habitual">▲</span>' : '')
+               + (p.swcWarnings?.estres ? ' <span style="color:var(--red);font-size:.5rem;vertical-align:middle" title="Deterioro respecto a su nivel habitual">▼</span>' : '');
 
     // Weekly load change display (4B)
     let wkChgTxt = '—', wkChgCls = '';
