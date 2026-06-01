@@ -534,17 +534,7 @@ try {
     const tnhdr = document.getElementById('team-name-hdr');
     if (tnhdr) tnhdr.textContent = cached || 'Cargando…';
     showForm();
-    fetch(SCRIPT_URL, {
-      method: 'POST',
-      body: JSON.stringify({ action: 'load_players', teamId: TEAM_ID, teamKey: TEAM_KEY })
-    }).then(r => r.json()).then(data => {
-      if (data.teamName) {
-        localStorage.setItem('ft_team_name_' + TEAM_ID, data.teamName);
-        const hdrTeam = document.getElementById('team-name-hdr');
-        if (hdrTeam) hdrTeam.textContent = data.teamName;
-      }
-    }).catch(() => {});
-    loadPlayerNames();
+    loadPlayerNames(); // también carga el nombre del equipo (teamName)
   }
 } catch(e) {
   // Si algo falla, forzar visibilidad del formulario para no quedar en negro
@@ -704,6 +694,11 @@ async function loadPlayerNames() {
     if (data.ok && Array.isArray(data.names)) {
       playerNames = data.names.filter(Boolean);
       setupAutocomplete();
+    }
+    if (data.teamName) {
+      localStorage.setItem('ft_team_name_' + TEAM_ID, data.teamName);
+      const hdrTeam = document.getElementById('team-name-hdr');
+      if (hdrTeam) hdrTeam.textContent = data.teamName;
     }
   } catch(e) {
     // fallo silencioso — el input sigue funcionando como texto libre
