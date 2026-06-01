@@ -356,7 +356,7 @@ textarea:focus { outline: none; border-color: var(--ai-border); box-shadow: 0 0 
   <div class="card">
     <div class="frow">
       <div class="flabel">Tu nombre</div>
-      <input type="text" id="j-nombre" placeholder="Nombre completo" autocomplete="off" list="nombres-list">
+      <input type="text" id="j-nombre" maxlength="60" placeholder="Nombre completo" autocomplete="off" list="nombres-list">
       <datalist id="nombres-list"></datalist>
     </div>
     <div class="frow">
@@ -477,7 +477,7 @@ textarea:focus { outline: none; border-color: var(--ai-border); box-shadow: 0 0 
       <input type="hidden" id="j-lesion-yn" value="N">
     </div>
     <div class="lesion-expand" id="lesion-expand">
-      <textarea id="j-lesion-txt" placeholder="Zona del cuerpo, cuándo apareció, cómo te afecta…"></textarea>
+      <textarea id="j-lesion-txt" maxlength="280" placeholder="Zona del cuerpo, cuándo apareció, cómo te afecta…"></textarea>
     </div>
   </div>
 
@@ -485,7 +485,7 @@ textarea:focus { outline: none; border-color: var(--ai-border); box-shadow: 0 0 
   <div class="card">
     <div class="fcol">
       <div class="flabel">¿Quieres añadir algo? <span class="fhint">Lo que quieras que sepa el staff</span></div>
-      <textarea id="j-comentario" placeholder="Escribe aquí lo que quieras…"></textarea>
+      <textarea id="j-comentario" maxlength="280" placeholder="Escribe aquí lo que quieras…"></textarea>
     </div>
   </div>
 
@@ -698,15 +698,11 @@ async function loadPlayerNames() {
   try {
     const r = await fetch(SCRIPT_URL, {
       method: 'POST',
-      body: JSON.stringify({ action: 'load_players', teamId: TEAM_ID, teamKey: TEAM_KEY })
+      body: JSON.stringify({ action: 'load_roster_names', teamId: TEAM_ID, teamKey: TEAM_KEY })
     });
     const data = await r.json();
-    if (data.ok && data.players) {
-      const parsed = JSON.parse(data.players);
-      playerNames = parsed
-        .filter(p => p.estado !== 'baja')
-        .map(p => p.nombre)
-        .filter(Boolean);
+    if (data.ok && Array.isArray(data.names)) {
+      playerNames = data.names.filter(Boolean);
       setupAutocomplete();
     }
   } catch(e) {
@@ -717,7 +713,8 @@ async function loadPlayerNames() {
 function setupAutocomplete() {
   const dl = document.getElementById('nombres-list');
   if (!dl) return;
-  dl.innerHTML = playerNames.map(n => `<option value="${n}">`).join('');
+  const escAttr = s => String(s==null?'':s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  dl.innerHTML = playerNames.map(n => `<option value="${escAttr(n)}">`).join('');
 }
 
 // ── CONFIRM SCREEN ─────────────────────────────────────

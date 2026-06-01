@@ -367,6 +367,9 @@ const BASE_URL   = window.location.href.replace('admin.html','');
 let adminPass = '';
 let teams = [];
 
+// Escapa texto para inserción segura en HTML (evita XSS)
+function esc(s){ return String(s==null?'':s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+
 async function doLogin() {
   const pass = document.getElementById('admin-pass').value;
   if(!pass) return;
@@ -431,7 +434,7 @@ function renderTeams() {
   if(!teams.length) { list.innerHTML = '<div class="loading">No hay equipos registrados aún</div>'; return; }
   list.innerHTML = teams.map((t,i) => {
     const playerUrl = BASE_URL + 'jugador.html?team=' + t.teamId + '&key=' + t.key;
-    const staffUrl  = BASE_URL + 'staff.html?team='   + t.teamId + '&key=' + t.key + '&role=staff';
+    const staffUrl  = BASE_URL + 'staff.html?team='   + t.teamId + '&key=' + (t.staffKey || t.key) + '&role=staff';
     const activeClass = t.active ? 'ts-active' : 'ts-inactive';
     const activeText  = t.active ? 'Activo' : 'Inactivo';
     return `
@@ -439,7 +442,7 @@ function renderTeams() {
       <div class="team-top" onclick="toggleDetail('td-${i}')">
         <div class="team-num">${i+1}</div>
         <div class="team-info">
-          <div class="team-name">${t.name}</div>
+          <div class="team-name">${esc(t.name)}</div>
           <div class="team-id">${t.teamId}</div>
         </div>
         <div class="team-status ${activeClass}">${activeText}</div>
@@ -455,7 +458,7 @@ function renderTeams() {
             <div class="detail-link-val" onclick="copyText('${staffUrl}','Link staff copiado')">${staffUrl}</div>
           </div>
           <div class="team-actions">
-            <button class="btn-copy-wa" onclick="copyWA('${playerUrl}','${t.name}')">📱 Mensaje WhatsApp</button>
+            <button class="btn-copy-wa" onclick="copyWA(${i})">📱 Mensaje WhatsApp</button>
             ${t.active
               ? `<button class="btn-toggle btn-toggle-off" onclick="toggleTeam('${t.teamId}')">Desactivar equipo</button>`
               : `<button class="btn-toggle btn-toggle-on"  onclick="toggleTeam('${t.teamId}')">Activar equipo</button>`}
@@ -480,8 +483,11 @@ async function toggleTeam(teamId) {
   } catch(e) { toast('❌ Error de conexión'); }
 }
 
-function copyWA(url, name) {
-  const msg = `*amane track — ${name}*\n\nHola equipo 👋\n\nAquí tenéis el enlace para vuestro formulario de seguimiento físico diario. Rellenadlo cada día antes del entrenamiento o partido:\n\n${url}\n\n📌 Guardad este enlace en vuestro móvil.`;
+function copyWA(i) {
+  const t = teams[i];
+  if(!t) return;
+  const url = BASE_URL + 'jugador.html?team=' + t.teamId + '&key=' + t.key;
+  const msg = `*amane track — ${t.name}*\n\nHola equipo 👋\n\nAquí tenéis el enlace para vuestro formulario de seguimiento físico diario. Rellenadlo cada día antes del entrenamiento o partido:\n\n${url}\n\n📌 Guardad este enlace en vuestro móvil.`;
   copyText(msg, '📱 Mensaje WhatsApp copiado');
 }
 

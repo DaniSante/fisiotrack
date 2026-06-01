@@ -787,7 +787,11 @@ let playerStats    = [];
 let aiAnalyses     = {};
 let activeChartTab = 'bienestar';
 let selectedPlayer = null;
+let radarPlayers = [];
 let cWellness = null, cAcwr = null, cRadar = null;
+
+// Escapa texto para inserción segura en HTML (evita XSS almacenado vía nombres/lesiones)
+function esc(s){ return String(s==null?'':s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
 
 function resizeActiveCharts() {
   [cWellness, cAcwr, cRadar].forEach(c => {
@@ -1386,14 +1390,14 @@ function renderPlayerCards(stats) {
     return `<div class="player-card ${cls}" id="pc-${aiId}">
       <div class="pc-head">
         <div class="pc-name-wrap">
-          <div class="pc-name">${p.nombre}</div>
+          <div class="pc-name">${esc(p.nombre)}</div>
           <div class="pc-sub">${p.estado === 'rehab' ? 'REHABILITACIÓN' : 'Activo'} · ${p.sesiones} sesiones · último ${p.lastDate}</div>
         </div>
         <div class="pc-badge ${cls}">${p.riesgo}</div>
         <div class="pc-score ${sCls}">${p.hooAvg}<span style="font-size:.62rem;color:var(--text-dim);font-weight:300">/28</span></div>
       </div>
 
-      ${p.lesion ? `<div class="pc-injury">⚠ Lesión: ${p.lesion}</div>` : ''}
+      ${p.lesion ? `<div class="pc-injury">⚠ Lesión: ${esc(p.lesion)}</div>` : ''}
 
       <div class="pc-metrics">
         <div class="pc-metric">
@@ -1459,9 +1463,9 @@ function renderPlayerCards(stats) {
 function renderAIContent(ai) {
   const prioLabel = ai.prioridad || 'MEDIA';
   const patron = ai.patron && ai.patron !== 'Normal' ? ai.patron : null;
-  const indicators = (ai.indicadores||[]).map(i => `<span class="pc-ai-tag">${i}</span>`).join('');
+  const indicators = (ai.indicadores||[]).map(i => `<span class="pc-ai-tag">${esc(i)}</span>`).join('');
   const plan = (ai.plan||[]).map((item,i) =>
-    `<div class="pc-ai-plan-item"><div class="pc-ai-plan-num">${i+1}</div><div>${item}</div></div>`
+    `<div class="pc-ai-plan-item"><div class="pc-ai-plan-num">${i+1}</div><div>${esc(item)}</div></div>`
   ).join('');
   const patronColors = {
     'Sobrecarga aguda':             ['rgba(192,112,112,.15)','var(--red)','rgba(192,112,112,.3)'],
@@ -1471,7 +1475,7 @@ function renderAIContent(ai) {
   };
   const pc = patron && patronColors[patron] ? patronColors[patron] : null;
   const patronTag = pc
-    ? `<span style="font-size:.52rem;padding:2px 7px;border-radius:var(--r);background:${pc[0]};color:${pc[1]};border:1px solid ${pc[2]}">${patron}</span>`
+    ? `<span style="font-size:.52rem;padding:2px 7px;border-radius:var(--r);background:${pc[0]};color:${pc[1]};border:1px solid ${pc[2]}">${esc(patron)}</span>`
     : '';
   return `<div class="pc-ai-content">
     <div class="pc-ai-header">
@@ -1480,7 +1484,7 @@ function renderAIContent(ai) {
       <div class="pc-ai-priority ${prioLabel}">Prioridad ${prioLabel}</div>
     </div>
     ${ai.indicadores&&ai.indicadores.length?`<div class="pc-ai-indicators">${indicators}</div>`:''}
-    <div class="pc-ai-summary">${ai.resumen||''}</div>
+    <div class="pc-ai-summary">${esc(ai.resumen||'')}</div>
     ${ai.plan&&ai.plan.length?`<div class="pc-ai-plan-title">Plan de acción</div>${plan}`:''}
   </div>`;
 }
@@ -1657,8 +1661,8 @@ function renderHoy() {
       return `<div class="hoy-alert-row ${cls}">
         <div class="hoy-alert-dot ${cls}"></div>
         <div style="flex:1">
-          <div class="hoy-alert-name">${nombre}</div>
-          <div class="hoy-alert-reason">${motivo}</div>
+          <div class="hoy-alert-name">${esc(nombre)}</div>
+          <div class="hoy-alert-reason">${esc(motivo)}</div>
         </div>
         <div class="hoy-alert-badge ${cls}">${s.riesgo}</div>
       </div>`;
@@ -1679,7 +1683,7 @@ function renderHoy() {
                        'Lleva ' + days + ' días sin reportar';
       const daysStyle = days >= 2 ? 'color:var(--amber)' : '';
       return `<div class="hoy-missing-row">
-        <div class="hoy-missing-name">${nombre}</div>
+        <div class="hoy-missing-name">${esc(nombre)}</div>
         <div class="hoy-missing-days" style="${daysStyle}">${daysText}</div>
       </div>`;
     }).join('');
@@ -1703,7 +1707,7 @@ function renderHoy() {
     const acwrColor  = s?.acwr > 1.5 ? 'color:var(--red)' : s?.acwr > 1.3 ? 'color:var(--amber)' : '';
     return `<div class="hoy-player-row" style="${!reportoHoy ? 'opacity:.5' : ''}">
       <div class="hoy-semaforo ${semClass}"></div>
-      <div class="hoy-player-name">${nombre}${!reportoHoy ? ' <span style="font-size:.65rem;color:var(--text-dim)">· sin reportar</span>' : ''}</div>
+      <div class="hoy-player-name">${esc(nombre)}${!reportoHoy ? ' <span style="font-size:.65rem;color:var(--text-dim)">· sin reportar</span>' : ''}</div>
       <div class="hoy-player-hooper" style="${hooColor}">${hooStr}</div>
       <div class="hoy-player-acwr" style="${acwrColor}">${acwrStr}</div>
     </div>`;
@@ -1976,9 +1980,10 @@ function renderACWR(allB, allE) {
 // ── RADAR ─────────────────────────────────────────────────
 function renderRadar(bienestar) {
   const players = [...new Set(bienestar.map(r=>r.jugador))].filter(Boolean).sort();
+  radarPlayers = players;
   const sel = document.getElementById('player-sel');
-  sel.innerHTML = players.map(p =>
-    `<button class="p-btn${p===selectedPlayer?' active':''}" onclick="selectPlayer('${p.replace(/'/g,"&#39;")}')">${p}</button>`
+  sel.innerHTML = players.map((p,i) =>
+    `<button class="p-btn${p===selectedPlayer?' active':''}" onclick="selectPlayer(${i})">${esc(p)}</button>`
   ).join('');
   if (!selectedPlayer && players.length) selectedPlayer = players[0];
   const ctx = getCtx('chart-radar');
@@ -2006,9 +2011,8 @@ function renderRadar(bienestar) {
     plugins:{legend:{labels:{boxWidth:12,color:'#76767E',font:{size:12}}},tooltip:{backgroundColor:'#191920',borderColor:'#2A2A36',borderWidth:1}}
   }});
 }
-function selectPlayer(name) {
-  selectedPlayer = name;
-  document.querySelectorAll('.p-btn').forEach(b=>b.classList.toggle('active',b.textContent===name));
+function selectPlayer(i) {
+  selectedPlayer = radarPlayers[i];
   const cutoff=getCutoff(currentPeriod);
   const bienestar=rawData.bienestar.filter(r=>toDate(r.fecha)>=cutoff&&r.contexto!=='rehab');
   renderRadar(bienestar);
@@ -2038,7 +2042,7 @@ function renderHeatmap(allB) {
       cell.addEventListener('mousemove',e=>{
         const tt=document.getElementById('hm-tooltip');
         if(entry){
-          tt.innerHTML=`<div class="tt-name">${player}</div><div class="tt-row">📅 ${d}</div>
+          tt.innerHTML=`<div class="tt-name">${esc(player)}</div><div class="tt-row">📅 ${esc(d)}</div>
             <div class="tt-row">🌙 Sueño<span>${entry.sueno}/7</span></div>
             <div class="tt-row">⚡ Fatiga<span>${entry.fatiga}/7</span></div>
             <div class="tt-row">💪 Dolor<span>${entry.dolorMuscular}/7</span></div>
@@ -2046,7 +2050,7 @@ function renderHeatmap(allB) {
             <div class="tt-row">📊 Hooper<span style="font-weight:600">${entry.total}/28</span></div>
             ${entry.rpe?`<div class="tt-row">🏃 RPE<span>${entry.rpe}/10</span></div>`:''}`;
         } else {
-          tt.innerHTML=`<div class="tt-name">${player}</div><div class="tt-row">Sin registro</div>`;
+          tt.innerHTML=`<div class="tt-name">${esc(player)}</div><div class="tt-row">Sin registro</div>`;
         }
         tt.style.display='block';tt.style.left=(e.clientX+14)+'px';tt.style.top=(e.clientY+14)+'px';
       });

@@ -515,6 +515,10 @@ let TEAM_KEY = '';
 let players  = [];
 let pState   = {};
 let modalId  = null;
+let lastSubs = [];
+
+// Escapa texto para inserción segura en HTML (evita XSS almacenado)
+function esc(s){ return String(s==null?'':s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
 
 // ── AUTH ───────────────────────────────────────────────
 function init() {
@@ -668,10 +672,10 @@ function renderPlantilla() {
   list.innerHTML=sorted.map((p,i)=>{
     const cls=p.estado==='activo'?'s-activo':p.estado==='lesionado'?'s-lesion':'s-baja';
     const lbl=p.estado==='activo'?'Activo':p.estado==='lesionado'?'Lesionado':'De baja';
-    const tag=(p.estado!=='activo'&&p.fechaBaja)?`<div class="baja-tag">Desde ${p.fechaBaja}</div>`:'';
+    const tag=(p.estado!=='activo'&&p.fechaBaja)?`<div class="baja-tag">Desde ${esc(p.fechaBaja)}</div>`:'';
     return `<div class="pl-card" style="animation-delay:${i*.03}s">
-      <div class="dorsal">${p.dorsal}</div>
-      <div class="pl-info"><div class="pl-name">${p.nombre}</div>${tag}</div>
+      <div class="dorsal">${esc(p.dorsal)}</div>
+      <div class="pl-info"><div class="pl-name">${esc(p.nombre)}</div>${tag}</div>
       <div class="s-pill ${cls}" onclick="openModal(${p.id})">${lbl}</div>
       <button class="more-btn" onclick="openModal(${p.id})">···</button>
     </div>`;
@@ -723,7 +727,7 @@ function renderBajas() {
   card.innerHTML=[...bajas].sort((a,b)=>(parseInt(a.dorsal)||99)-(parseInt(b.dorsal)||99)).map(p=>{
     const cls=p.estado==='lesionado'?'s-lesion':'s-baja';
     const lbl=p.estado==='lesionado'?'Lesionado':'De baja';
-    return `<div class="pl-card"><div class="dorsal">${p.dorsal}</div><div class="pl-info"><div class="pl-name">${p.nombre}</div>${p.fechaBaja?`<div class="baja-tag">Desde ${p.fechaBaja}</div>`:''}</div><div class="s-pill ${cls}">${lbl}</div></div>`;
+    return `<div class="pl-card"><div class="dorsal">${esc(p.dorsal)}</div><div class="pl-info"><div class="pl-name">${esc(p.nombre)}</div>${p.fechaBaja?`<div class="baja-tag">Desde ${esc(p.fechaBaja)}</div>`:''}</div><div class="s-pill ${cls}">${lbl}</div></div>`;
   }).join('');
 }
 
@@ -751,16 +755,15 @@ async function checkSubmissions() {
       if(!full.length) {
         html = '<div class="sub-empty">Ningún jugador ha enviado el formulario aún hoy</div>';
       } else {
-        html = full.map(s => {
+        lastSubs = full;
+        html = full.map((s, i) => {
           const isRehab = s.contexto === 'rehab';
           const cls   = isRehab ? 'sub-tag-rehab' : 'sub-tag';
-          const label = isRehab ? `↻ ${s.jugador} · rehab` : `✓ ${s.jugador}`;
-          const newCtx = isRehab ? 'equipo' : 'rehab';
+          const label = isRehab ? `↻ ${esc(s.jugador)} · rehab` : `✓ ${esc(s.jugador)}`;
           const flipTxt = isRehab ? '→ equipo' : '→ rehab';
-          const ts = s.timestamp.replace(/'/g, '');
           return `<span style="display:inline-flex;align-items:center;gap:2px;margin:2px 0">
             <span class="${cls}">${label}</span>
-            <button class="sub-flip" onclick="flipContext('${ts}','${s.jugador}','${newCtx}',this)">${flipTxt}</button>
+            <button class="sub-flip" onclick="flipContext(${i},this)">${flipTxt}</button>
           </span>`;
         }).join('');
       }
@@ -773,12 +776,15 @@ async function checkSubmissions() {
   }
 }
 
-async function flipContext(timestamp, jugador, newContext, btn) {
+async function flipContext(i, btn) {
+  const s = lastSubs[i];
+  if(!s) return;
+  const newContext = s.contexto === 'rehab' ? 'equipo' : 'rehab';
   btn.textContent = '…'; btn.disabled = true;
   try {
-    const r = await api({action:'correct_context', teamId:TEAM_ID, teamKey:TEAM_KEY, timestamp, newContext});
+    const r = await api({action:'correct_context', teamId:TEAM_ID, teamKey:TEAM_KEY, timestamp:s.timestamp, newContext});
     if(r.ok) {
-      toast(`✓ ${jugador} → ${newContext}`);
+      toast(`✓ ${s.jugador} → ${newContext}`);
       checkSubmissions();
     } else {
       toast('❌ ' + (r.error || 'Error al corregir'));
@@ -801,8 +807,8 @@ function renderPartido() {
     const posHtml=POSITIONS.map(pos=>`<div class="pos-tag ${st.pos.includes(pos)?'on':''}" onclick="togglePos(${p.id},'${pos}')">${pos}</div>`).join('');
     return `<div class="pp-card">
       <div class="pp-top">
-        <div class="dorsal" style="width:32px;height:32px;font-size:.78rem">${p.dorsal}</div>
-        <div class="pp-info"><div class="pp-name">${p.nombre}</div></div>
+        <div class="dorsal" style="width:32px;height:32px;font-size:.78rem">${esc(p.dorsal)}</div>
+        <div class="pp-info"><div class="pp-name">${esc(p.nombre)}</div></div>
         <div class="pp-btns">
           <button class="conv-btn ${st.conv==='T'?'cT':''}" onclick="setConv(${p.id},'T')">Titular</button>
           <button class="conv-btn ${st.conv==='S'?'cS':''}" onclick="setConv(${p.id},'S')">Suplente</button>
